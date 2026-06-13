@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Key Card Match</title>
+<title>Key Card Match Pro</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" />
 <style>
   /* ===================== Theme tokens ===================== */
@@ -156,9 +156,11 @@
     text-align: center;
     vertical-align: middle;
     min-width: 64px;
-    height: 110px;
     font-weight: 700;
     font-size: 15px;
+  }
+  table.grid td.cell, table.grid td.row-head{
+    height: 110px;
   }
   table.grid th{
     background: var(--cell-header-bg);
@@ -167,8 +169,13 @@
     font-size: 12px;
     width: 56px;
     height: 28px;
+    padding: 4px;
+    line-height: 1;
   }
-  table.grid th:first-child, table.grid td.row-head{
+  table.grid th:first-child{
+    width: 36px;
+  }
+  table.grid td.row-head{
     width: 36px;
     color: var(--text-muted);
     background: var(--cell-header-bg);
@@ -515,15 +522,15 @@ const STORAGE_KEY = 'kcm_state_v1';
 const MAX_DIM = 20;
 
 const DEFAULT_CARDS = [
-  { id: 'c-gem',    mode: 'both', color: '#7cb342', iconColor: '#ffffff', icon: 'fa-solid fa-gem',                 label: 'Gem' },
-  { id: 'c-anchor', mode: 'both', color: '#e040fb', iconColor: '#ffffff', icon: 'fa-solid fa-anchor',              label: 'Anchor' },
-  { id: 'c-music',  mode: 'both', color: '#ffc107', iconColor: '#ffffff', icon: 'fa-solid fa-music',               label: 'Music' },
-  { id: 'c-drink',  mode: 'both', color: '#ef5350', iconColor: '#ffffff', icon: 'fa-solid fa-martini-glass',       label: 'Drink' },
-  { id: 'c-sail',   mode: 'both', color: '#7e57c2', iconColor: '#ffffff', icon: 'fa-solid fa-sailboat',            label: 'Sailboat' },
-  { id: 'c-wheel',  mode: 'both', color: '#ff9800', iconColor: '#ffffff', icon: 'fa-solid fa-dharmachakra',        label: 'Wheel' },
-  { id: 'c-movie',  mode: 'both', color: '#ec407a', iconColor: '#ffffff', icon: 'fa-solid fa-clapperboard',        label: 'Movie' },
-  { id: 'c-magic',  mode: 'both', color: '#29b6f6', iconColor: '#ffffff', icon: 'fa-solid fa-wand-magic-sparkles', label: 'Magic' },
-  { id: 'c-search', mode: 'both', color: '#5c6bc0', iconColor: '#ffffff', icon: 'fa-solid fa-magnifying-glass',    label: 'Search' },
+  { id: 'c-gem',    mode: 'both', color: '#7cb342', iconColor: '#ffffff', icon: 'fa-solid fa-cloud', label: 'Gem' },
+  { id: 'c-anchor', mode: 'both', color: '#e040fb', iconColor: '#ffffff', icon: 'fa-solid fa-magnifying-glass', label: 'Anchor' },
+  { id: 'c-music',  mode: 'both', color: '#ffc107', iconColor: '#ffffff', icon: 'fa-solid fa-bolt', label: 'Music' },
+  { id: 'c-drink',  mode: 'both', color: '#ef5350', iconColor: '#ffffff', icon: 'fa-solid fa-wind', label: 'Drink' },
+  { id: 'c-sail',   mode: 'both', color: '#7e57c2', iconColor: '#ffffff', icon: 'fa-solid fa-wand-magic-sparkles', label: 'Sailboat' },
+  { id: 'c-wheel',  mode: 'both', color: '#ff9800', iconColor: '#ffffff', icon: 'fa-solid fa-sun', label: 'Wheel' },
+  { id: 'c-movie',  mode: 'both', color: '#ec407a', iconColor: '#ffffff', icon: 'fa-solid fa-umbrella', label: 'Movie' },
+  { id: 'c-magic',  mode: 'both', color: '#29b6f6', iconColor: '#ffffff', icon: 'fa-solid fa-cloud-rain', label: 'Magic' },
+  { id: 'c-search', mode: 'both', color: '#5c6bc0', iconColor: '#ffffff', icon: 'fa-solid fa-snowman', label: 'Search' },
 ];
 
 // Curated list of common Font Awesome 6 Free (solid) icons for the picker.
