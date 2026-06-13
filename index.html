@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Key Card Match - Custom Grid</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+<title>Key Card Match</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" />
 <style>
   /* ===================== Theme tokens ===================== */
   :root{
@@ -156,20 +156,24 @@
     text-align: center;
     vertical-align: middle;
     min-width: 64px;
-    height: 64px;
+    height: 110px;
     font-weight: 700;
     font-size: 15px;
   }
   table.grid th{
     background: var(--cell-header-bg);
     color: var(--text-muted);
-    font-weight: 700;
+    font-weight: 600;
+    font-size: 12px;
     width: 56px;
+    height: 28px;
   }
   table.grid th:first-child, table.grid td.row-head{
-    width: 46px;
+    width: 36px;
     color: var(--text-muted);
     background: var(--cell-header-bg);
+    font-size: 12px;
+    font-weight: 600;
   }
   table.grid td.cell{
     background: var(--cell-bg);
@@ -193,20 +197,20 @@
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size: 22px;
+    font-size: 38px;
     color: #fff;
     box-shadow: 0 2px 6px rgba(0,0,0,0.18);
   }
   .cell-card.icon-only{
     background: transparent !important;
     box-shadow: none;
-    font-size: 26px;
+    font-size: 44px;
   }
   .cell-cross{
     position:absolute; inset:0;
     display:flex; align-items:center; justify-content:center;
     color: var(--cross);
-    font-size: 26px;
+    font-size: 48px;
     pointer-events:none;
   }
   .cell-cross.with-card i{
