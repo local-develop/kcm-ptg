@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Key Card Match - Custom Grid</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+<style>
+  /* ===================== Theme tokens ===================== */
+  :root{
+    --bg: #f3f4f6;
+    --panel: #ffffff;
+    --panel-border: #e2e4e9;
+    --text: #1f2430;
+    --text-muted: #9aa0ab;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --cell-bg: #fafafa;
+    --cell-header-bg: #ffffff;
+    --cell-border: #e6e8ec;
+    --cell-text: #c7cad1;
+    --cross: #e0426b;
+    --shadow: 0 1px 2px rgba(20,20,30,0.04), 0 8px 24px rgba(20,20,30,0.04);
+    --radius: 10px;
+  }
+  [data-theme="dark"]{
+    --bg: #161a23;
+    --panel: #1f2430;
+    --panel-border: #2c3242;
+    --text: #e7e9ee;
+    --text-muted: #6b7280;
+    --accent: #5b8cff;
+    --accent-soft: #283457;
+    --cell-bg: #232938;
+    --cell-header-bg: #1c212d;
+    --cell-border: #313747;
+    --cell-text: #4a5063;
+    --cross: #ff6b8b;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.25);
+  }
+
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    transition: background .25s ease, color .25s ease;
+    min-height: 100vh;
+  }
+
+  /* ===================== Layout ===================== */
+  .page{
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 18px 18px 60px;
+  }
+  .toolbar{
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 14px 18px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .toolbar h1{
+    font-size: 18px;
+    margin: 0;
+    margin-right: auto;
+    font-weight: 700;
+    letter-spacing: .2px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .toolbar h1 i{ color: var(--accent); }
+
+  .field{ display:flex; align-items:center; gap:8px; }
+  .field label{ font-size: 14px; color: var(--text-muted); font-weight:600; }
+  .field input[type="number"]{
+    width: 70px;
+    padding: 7px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--panel-border);
+    background: var(--cell-bg);
+    color: var(--text);
+    font-size: 14px;
+  }
+
+  button{
+    font-family: inherit;
+    cursor: pointer;
+    border: 1px solid var(--panel-border);
+    background: var(--cell-bg);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background .15s ease, transform .05s ease, border-color .15s ease;
+  }
+  button:hover{ border-color: var(--accent); }
+  button:active{ transform: scale(0.97); }
+  button.primary{
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  button.primary:hover{ filter: brightness(1.08); }
+  button.ghost{ background: transparent; }
+  button.danger{ border-color: var(--cross); color: var(--cross); }
+  button.danger:hover{ background: var(--cross); color:#fff; }
+  button.icon-btn{
+    width: 34px; height: 34px; padding:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* ===================== Main layout ===================== */
+  .layout{
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 18px;
+    align-items: start;
+  }
+  @media (max-width: 900px){
+    .layout{ grid-template-columns: 1fr; }
+  }
+
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px;
+  }
+  .panel h2{
+    font-size: 15px;
+    margin: 0 0 12px;
+    font-weight: 700;
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+  }
+  .panel h2 .sub-actions{ display:flex; gap:6px; }
+  .panel h2 .sub-actions button{ font-size:12px; padding:5px 10px; }
+
+  /* ===================== Grid ===================== */
+  .grid-scroll{ overflow:auto; }
+  table.grid{
+    border-collapse: collapse;
+    width: 100%;
+    table-layout: fixed;
+  }
+  table.grid th, table.grid td{
+    border: 1px solid var(--cell-border);
+    text-align: center;
+    vertical-align: middle;
+    min-width: 64px;
+    height: 64px;
+    font-weight: 700;
+    font-size: 15px;
+  }
+  table.grid th{
+    background: var(--cell-header-bg);
+    color: var(--text-muted);
+    font-weight: 700;
+    width: 56px;
+  }
+  table.grid th:first-child, table.grid td.row-head{
+    width: 46px;
+    color: var(--text-muted);
+    background: var(--cell-header-bg);
+  }
+  table.grid td.cell{
+    background: var(--cell-bg);
+    color: var(--cell-text);
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+  }
+  table.grid td.cell.disabled{
+    opacity: .35;
+    cursor: default;
+  }
+  table.grid td.cell.dragover{
+    box-shadow: inset 0 0 0 2px var(--accent);
+  }
+  .cell-card{
+    width: 78%;
+    height: 78%;
+    margin: 0 auto;
+    border-radius: 8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size: 22px;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+  }
+  .cell-card.icon-only{
+    background: transparent !important;
+    box-shadow: none;
+    font-size: 26px;
+  }
+  .cell-cross{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    color: var(--cross);
+    font-size: 26px;
+    pointer-events:none;
+  }
+  .cell-cross.with-card i{
+    text-shadow: 0 0 4px rgba(0,0,0,.4);
+  }
+
+  /* ===================== Cards panel ===================== */
+  .cards-grid{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .card-item{
+    aspect-ratio: 1 / 1.15;
+    border-radius: 10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size: 26px;
+    color:#fff;
+    cursor: grab;
+    border: 2px solid transparent;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    position: relative;
+    transition: transform .1s ease, border-color .15s ease;
+  }
+  .card-item.icon-only{
+    box-shadow: none;
+    border: 2px solid var(--panel-border);
+  }
+  .card-item:hover{ transform: translateY(-2px); }
+  .card-item.selected{
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .card-item .edit-btn{
+    position:absolute; top:3px; right:3px;
+    width:20px; height:20px; border-radius:6px;
+    background: rgba(0,0,0,0.35);
+    color:#fff; border:none;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; padding:0;
+    opacity:0;
+    transition: opacity .15s ease;
+  }
+  .card-item:hover .edit-btn{ opacity:1; }
+  .card-item.icon-only .edit-btn{ background: rgba(0,0,0,0.18); color: var(--text); }
+
+  .cards-hint{
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height:1.5;
+    margin-top: 4px;
+  }
+
+  /* ===================== How to use ===================== */
+  .howto{ margin-top: 18px; }
+  .howto ul{ margin: 8px 0 0; padding-left: 20px; line-height: 1.7; font-size: 14px; }
+  .howto code{
+    background: var(--cell-bg);
+    border: 1px solid var(--panel-border);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+
+  /* ===================== Modal ===================== */
+  .modal-backdrop{
+    position: fixed; inset:0;
+    background: rgba(10,12,18,.55);
+    display:flex; align-items:center; justify-content:center;
+    z-index: 100;
+    padding: 16px;
+  }
+  .modal-backdrop.hidden{ display:none; }
+  .modal{
+    background: var(--panel);
+    border-radius: 14px;
+    width: 100%; max-width: 460px;
+    max-height: 90vh;
+    overflow:auto;
+    padding: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    border: 1px solid var(--panel-border);
+  }
+  .modal h3{ margin: 0 0 14px; font-size: 17px; }
+  .modal-row{ margin-bottom: 14px; }
+  .modal-row label{
+    display:block; font-size: 13px; font-weight: 700;
+    margin-bottom: 6px; color: var(--text-muted);
+  }
+  .mode-toggle{ display:flex; gap:8px; }
+  .mode-toggle button{ flex:1; }
+  .mode-toggle button.active{ background: var(--accent); border-color: var(--accent); color:#fff; }
+
+  .color-row{ display:flex; align-items:center; gap:10px; }
+  .color-row input[type="color"]{
+    width: 46px; height: 36px; border-radius: 8px; border: 1px solid var(--panel-border);
+    background: transparent; cursor:pointer; padding:2px;
+  }
+  .color-row input[type="text"]{
+    flex:1; padding:8px 10px; border-radius:8px; border:1px solid var(--panel-border);
+    background: var(--cell-bg); color: var(--text); font-size:14px;
+  }
+
+  .icon-search{
+    width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--panel-border);
+    background: var(--cell-bg); color: var(--text); font-size:14px; margin-bottom:8px;
+  }
+  .icon-picker{
+    display:grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    max-height: 180px;
+    overflow:auto;
+    padding: 6px;
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    background: var(--cell-bg);
+  }
+  .icon-picker .ic{
+    aspect-ratio: 1; border-radius:6px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:15px; color: var(--text);
+    border: 1px solid transparent;
+  }
+  .icon-picker .ic:hover{ background: var(--accent-soft); }
+  .icon-picker .ic.selected{ border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+
+  .custom-icon-row{ display:flex; gap:8px; margin-top:8px; }
+  .custom-icon-row input{
+    flex:1; padding:8px 10px; border-radius:8px; border:1px solid var(--panel-border);
+    background: var(--cell-bg); color: var(--text); font-size:13px; font-family: monospace;
+  }
+
+  .preview-row{ display:flex; align-items:center; gap:14px; }
+  .preview-card{
+    width:64px; height:74px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:26px; color:#fff; box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+    flex-shrink:0;
+  }
+  .preview-card.icon-only{ box-shadow:none; border:2px solid var(--panel-border); }
+  .preview-info{ font-size: 12px; color: var(--text-muted); line-height:1.6; }
+
+  .modal-actions{
+    display:flex; justify-content:space-between; gap:8px; margin-top:18px;
+  }
+  .modal-actions .right{ display:flex; gap:8px; }
+
+  .toast{
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+    background: var(--panel); color: var(--text);
+    border: 1px solid var(--panel-border);
+    padding: 10px 18px; border-radius: 10px;
+    box-shadow: var(--shadow);
+    font-size: 13px; font-weight:600;
+    opacity:0; pointer-events:none;
+    transition: opacity .2s ease, transform .2s ease;
+    z-index: 200;
+  }
+  .toast.show{ opacity:1; transform: translateX(-50%) translateY(-4px); }
+</style>
+</head>
+<body data-theme="light">
+<div class="page">
+
+  <!-- ===================== Toolbar ===================== -->
+  <div class="toolbar">
+    <h1><i class="fa-solid fa-table-cells"></i> Key Card Match</h1>
+
+    <div class="field">
+      <label for="rowsInput">Rows</label>
+      <input type="number" id="rowsInput" min="1" max="20" value="3" />
+    </div>
+    <div class="field">
+      <label for="colsInput">Cols</label>
+      <input type="number" id="colsInput" min="1" max="20" value="8" />
+    </div>
+
+    <button class="primary" id="applyBtn"><i class="fa-solid fa-check"></i> Apply</button>
+    <button id="resetBtn"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+    <button class="icon-btn" id="themeBtn" title="Toggle dark / light"><i class="fa-solid fa-moon"></i></button>
+  </div>
+
+  <!-- ===================== Layout ===================== -->
+  <div class="layout">
+
+    <!-- Grid panel -->
+    <div class="panel">
+      <h2>Grid</h2>
+      <div class="grid-scroll">
+        <table class="grid" id="gridTable"></table>
+      </div>
+    </div>
+
+    <!-- Cards panel -->
+    <div class="panel">
+      <h2>
+        Cards
+        <span class="sub-actions">
+          <button class="ghost" id="addCardBtn"><i class="fa-solid fa-plus"></i> Card</button>
+          <button class="ghost" id="resetCardsBtn" title="Restore default cards"><i class="fa-solid fa-rotate"></i></button>
+        </span>
+      </h2>
+      <div class="cards-grid" id="cardsGrid"></div>
+      <div class="cards-hint">
+        Kéo thẻ vào ô để đặt. Trên di động: bấm chọn thẻ rồi bấm vào ô để đặt.
+        Bấm <i class="fa-solid fa-pen" style="font-size:10px"></i> trên thẻ để chỉnh sửa màu / icon.
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== How to use ===================== -->
+  <div class="panel howto">
+    <h2>How to use</h2>
+    <ul>
+      <li>Kéo (drag) một thẻ trong khung <b>Cards</b> vào ô trên lưới. Trên di động, bấm vào thẻ để chọn rồi bấm vào ô.</li>
+      <li>Bấm vào một ô để gạch <span style="color:var(--cross)"><i class="fa-solid fa-xmark"></i></span> và xoá thẻ trong ô đó.</li>
+      <li>Bấm lại để xoá dấu gạch (ô trở lại trống).</li>
+      <li>Bấm đúp (double click) vào ô để xoá hoàn toàn (cả thẻ và dấu gạch).</li>
+      <li>Nút <b>Reset</b> xoá toàn bộ lưới (không xoá danh sách thẻ tuỳ chỉnh).</li>
+      <li>Bấm <b>+ Card</b> để thêm thẻ mới: chọn <b>màu</b>, <b>icon</b> (Font Awesome Free) hoặc cả hai. Mỗi thẻ nên có màu hoặc icon riêng biệt.</li>
+      <li>Bấm icon <i class="fa-solid fa-rotate" style="font-size:11px"></i> để khôi phục lại bộ thẻ mặc định.</li>
+      <li>Cấu hình (thẻ, lưới, theme) được lưu tự động trong trình duyệt (localStorage).</li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- ===================== Add / Edit card modal ===================== -->
+<div class="modal-backdrop hidden" id="cardModal">
+  <div class="modal">
+    <h3 id="modalTitle">Thêm thẻ mới</h3>
+
+    <div class="modal-row">
+      <label>Kiểu thẻ</label>
+      <div class="mode-toggle" id="modeToggle">
+        <button data-mode="color" type="button"><i class="fa-solid fa-fill-drip"></i> Màu</button>
+        <button data-mode="icon" type="button"><i class="fa-solid fa-icons"></i> Icon</button>
+        <button data-mode="both" type="button"><i class="fa-solid fa-layer-group"></i> Cả hai</button>
+      </div>
+    </div>
+
+    <div class="modal-row" id="colorRow">
+      <label>Màu nền</label>
+      <div class="color-row">
+        <input type="color" id="colorPicker" value="#2563eb" />
+        <input type="text" id="colorHex" value="#2563eb" />
+      </div>
+    </div>
+
+    <div class="modal-row" id="iconColorRow">
+      <label>Màu icon</label>
+      <div class="color-row">
+        <input type="color" id="iconColorPicker" value="#ffffff" />
+        <input type="text" id="iconColorHex" value="#ffffff" />
+      </div>
+    </div>
+
+    <div class="modal-row" id="iconPickRow">
+      <label>Chọn icon (Font Awesome Free)</label>
+      <input type="text" class="icon-search" id="iconSearch" placeholder="Tìm icon... ví dụ: star, anchor, music" />
+      <div class="icon-picker" id="iconPicker"></div>
+      <div class="custom-icon-row">
+        <input type="text" id="customIconClass" placeholder="hoặc nhập class FA, ví dụ: fa-solid fa-anchor" />
+        <button id="useCustomIconBtn" type="button">Dùng</button>
+      </div>
+    </div>
+
+    <div class="modal-row">
+      <label>Tên thẻ (tuỳ chọn)</label>
+      <input type="text" id="cardLabel" placeholder="Ví dụ: Mỏ neo" style="width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--panel-border); background:var(--cell-bg); color:var(--text); font-size:14px;" />
+    </div>
+
+    <div class="modal-row">
+      <label>Xem trước</label>
+      <div class="preview-row">
+        <div class="preview-card" id="previewCard"></div>
+        <div class="preview-info">Đây là thẻ sẽ hiển thị trong khung Cards và khi đặt vào ô.</div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="danger" id="deleteCardBtn" style="display:none;"><i class="fa-solid fa-trash"></i> Xoá thẻ</button>
+      <div class="right">
+        <button id="cancelCardBtn">Hủy</button>
+        <button class="primary" id="saveCardBtn"><i class="fa-solid fa-check"></i> Lưu</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================================
+   STATE & CONSTANTS
+   ========================================================================= */
+const STORAGE_KEY = 'kcm_state_v1';
+const MAX_DIM = 20;
+
+const DEFAULT_CARDS = [
+  { id: 'c-gem',    mode: 'both', color: '#7cb342', iconColor: '#ffffff', icon: 'fa-solid fa-gem',                 label: 'Gem' },
+  { id: 'c-anchor', mode: 'both', color: '#e040fb', iconColor: '#ffffff', icon: 'fa-solid fa-anchor',              label: 'Anchor' },
+  { id: 'c-music',  mode: 'both', color: '#ffc107', iconColor: '#ffffff', icon: 'fa-solid fa-music',               label: 'Music' },
+  { id: 'c-drink',  mode: 'both', color: '#ef5350', iconColor: '#ffffff', icon: 'fa-solid fa-martini-glass',       label: 'Drink' },
+  { id: 'c-sail',   mode: 'both', color: '#7e57c2', iconColor: '#ffffff', icon: 'fa-solid fa-sailboat',            label: 'Sailboat' },
+  { id: 'c-wheel',  mode: 'both', color: '#ff9800', iconColor: '#ffffff', icon: 'fa-solid fa-dharmachakra',        label: 'Wheel' },
+  { id: 'c-movie',  mode: 'both', color: '#ec407a', iconColor: '#ffffff', icon: 'fa-solid fa-clapperboard',        label: 'Movie' },
+  { id: 'c-magic',  mode: 'both', color: '#29b6f6', iconColor: '#ffffff', icon: 'fa-solid fa-wand-magic-sparkles', label: 'Magic' },
+  { id: 'c-search', mode: 'both', color: '#5c6bc0', iconColor: '#ffffff', icon: 'fa-solid fa-magnifying-glass',    label: 'Search' },
+];
+
+// Curated list of common Font Awesome 6 Free (solid) icons for the picker.
+const ICON_LIBRARY = [
+  'star','heart','crown','gem','anchor','music','martini-glass','sailboat','ship',
+  'dharmachakra','clapperboard','wand-magic-sparkles','magnifying-glass','bell','gift',
+  'key','lock','map','compass','camera','book','feather','leaf','sun','moon','cloud',
+  'umbrella','snowflake','fire','bolt','paw','dog','cat','dove','fish','apple-whole',
+  'carrot','pizza-slice','ice-cream','mug-hot','cookie','dice','chess','futbol',
+  'basketball','baseball','volleyball','bicycle','car','plane','rocket','train',
+  'house','tree','flag','trophy','medal','puzzle-piece','palette','ghost','skull',
+  'crow','frog','bug','spider','horse','egg','bone','drum','guitar','microphone'
+];
+
+let state = {
+  rows: 3,
+  cols: 8,
+  theme: 'light',
+  cards: JSON.parse(JSON.stringify(DEFAULT_CARDS)),
+  cells: {} // key "A1" -> { cardId: string|null, crossed: bool }
+};
+
+let selectedCardId = null;   // for tap-to-place on mobile
+let editingCardId = null;    // card currently being edited in modal (null = creating new)
+
+/* =========================================================================
+   PERSISTENCE
+   ========================================================================= */
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const saved = JSON.parse(raw);
+      state = Object.assign(state, saved);
+      if(!Array.isArray(state.cards) || state.cards.length === 0){
+        state.cards = JSON.parse(JSON.stringify(DEFAULT_CARDS));
+      }
+    }
+  }catch(e){ console.warn('Failed to load saved state', e); }
+}
+
+function saveState(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }catch(e){ console.warn('Failed to save state', e); }
+}
+
+/* =========================================================================
+   HELPERS
+   ========================================================================= */
+function colLetter(index){
+  // 0 -> A, 25 -> Z, 26 -> AA ...
+  let n = index, s = '';
+  while(n >= 0){
+    s = String.fromCharCode(65 + (n % 26)) + s;
+    n = Math.floor(n / 26) - 1;
+  }
+  return s;
+}
+
+function cellKey(col, row){ return col + row; }
+
+function getCard(id){
+  return state.cards.find(c => c.id === id) || null;
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+/* =========================================================================
+   THEME
+   ========================================================================= */
+function applyTheme(){
+  document.body.setAttribute('data-theme', state.theme);
+  const icon = document.querySelector('#themeBtn i');
+  icon.className = state.theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+}
+
+document.getElementById('themeBtn').addEventListener('click', () => {
+  state.theme = state.theme === 'dark' ? 'light' : 'dark';
+  applyTheme();
+  saveState();
+});
+
+/* =========================================================================
+   GRID RENDERING
+   ========================================================================= */
+function renderGrid(){
+  const table = document.getElementById('gridTable');
+  table.innerHTML = '';
+
+  const rows = state.rows;
+  const cols = state.cols;
+
+  // Header row
+  const thead = document.createElement('tr');
+  thead.appendChild(document.createElement('th')); // corner cell
+  for(let c = 0; c < cols; c++){
+    const th = document.createElement('th');
+    th.textContent = colLetter(c);
+    thead.appendChild(th);
+  }
+  table.appendChild(thead);
+
+  // Body rows
+  for(let r = 1; r <= rows; r++){
+    const tr = document.createElement('tr');
+
+    const rowHead = document.createElement('td');
+    rowHead.className = 'row-head';
+    rowHead.textContent = r;
+    tr.appendChild(rowHead);
+
+    for(let c = 0; c < cols; c++){
+      const col = colLetter(c);
+      const key = cellKey(col, r);
+      const td = document.createElement('td');
+      td.className = 'cell';
+      td.dataset.key = key;
+      renderCellContent(td, key, col, r);
+      attachCellEvents(td, key);
+      tr.appendChild(td);
+    }
+    table.appendChild(tr);
+  }
+}
+
+function renderCellContent(td, key, col, row){
+  td.innerHTML = '';
+  const data = state.cells[key];
+
+  // Placeholder label (shown when cell is empty, like A1, B2 ...)
+  if(!data || (!data.cardId && !data.crossed)){
+    td.textContent = col + row;
+    return;
+  }
+
+  if(data.cardId){
+    const card = getCard(data.cardId);
+    if(card){
+      const div = document.createElement('div');
+      div.className = 'cell-card' + (card.mode === 'icon' ? ' icon-only' : '');
+      if(card.mode !== 'icon') div.style.background = card.color;
+      if(card.mode !== 'color'){
+        const i = document.createElement('i');
+        i.className = card.icon;
+        if(card.mode === 'icon') i.style.color = card.iconColor || card.color;
+        else i.style.color = card.iconColor || '#ffffff';
+        div.appendChild(i);
+      }
+      td.appendChild(div);
+    }
+  }
+
+  if(data.crossed){
+    const cross = document.createElement('div');
+    cross.className = 'cell-cross' + (data.cardId ? ' with-card' : '');
+    cross.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+    td.appendChild(cross);
+  }
+}
+
+function attachCellEvents(td, key){
+  // Click: cycle empty -> crossed (and clears card) -> empty
+  td.addEventListener('click', () => {
+    const data = state.cells[key] || { cardId: null, crossed: false };
+    if(!data.crossed){
+      data.crossed = true;
+      data.cardId = null; // crossing removes any placed card
+    } else {
+      data.crossed = false;
+    }
+    state.cells[key] = data;
+    renderCellContent(td, key, key.match(/[A-Z]+/)[0], key.match(/\d+/)[0]);
+    saveState();
+  });
+
+  // Double click: fully clear the cell
+  td.addEventListener('dblclick', (e) => {
+    e.preventDefault();
+    delete state.cells[key];
+    renderCellContent(td, key, key.match(/[A-Z]+/)[0], key.match(/\d+/)[0]);
+    saveState();
+  });
+
+  // Drag & drop target
+  td.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    td.classList.add('dragover');
+  });
+  td.addEventListener('dragleave', () => td.classList.remove('dragover'));
+  td.addEventListener('drop', (e) => {
+    e.preventDefault();
+    td.classList.remove('dragover');
+    const cardId = e.dataTransfer.getData('text/plain');
+    if(!cardId) return;
+    placeCardInCell(key, cardId, td);
+  });
+
+  // Tap-to-place (mobile / accessibility): if a card is currently selected
+  // a second click on a cell places it instead of crossing.
+  td.addEventListener('click', () => {
+    if(selectedCardId){
+      placeCardInCell(key, selectedCardId, td);
+      selectedCardId = null;
+      renderCards();
+    }
+  }, true); // capture so it runs before the cycle handler decides nothing weird
+}
+
+function placeCardInCell(key, cardId, td){
+  if(!getCard(cardId)) return;
+  state.cells[key] = { cardId: cardId, crossed: false };
+  renderCellContent(td, key, key.match(/[A-Z]+/)[0], key.match(/\d+/)[0]);
+  saveState();
+}
+
+/* =========================================================================
+   CARDS PANEL RENDERING
+   ========================================================================= */
+function renderCards(){
+  const grid = document.getElementById('cardsGrid');
+  grid.innerHTML = '';
+
+  state.cards.forEach(card => {
+    const div = document.createElement('div');
+    div.className = 'card-item' + (card.mode === 'icon' ? ' icon-only' : '');
+    if(card.id === selectedCardId) div.classList.add('selected');
+    if(card.mode !== 'icon') div.style.background = card.color;
+    div.draggable = true;
+    div.title = card.label || '';
+
+    if(card.mode !== 'color'){
+      const i = document.createElement('i');
+      i.className = card.icon;
+      i.style.color = card.mode === 'icon' ? (card.iconColor || card.color) : (card.iconColor || '#ffffff');
+      div.appendChild(i);
+    }
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'edit-btn';
+    editBtn.type = 'button';
+    editBtn.innerHTML = '<i class="fa-solid fa-pen"></i>';
+    editBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openCardModal(card.id);
+    });
+    div.appendChild(editBtn);
+
+    // Drag start
+    div.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', card.id);
+      e.dataTransfer.effectAllowed = 'copy';
+    });
+
+    // Tap to select for mobile placement
+    div.addEventListener('click', () => {
+      selectedCardId = (selectedCardId === card.id) ? null : card.id;
+      renderCards();
+    });
+
+    grid.appendChild(div);
+  });
+}
+
+/* =========================================================================
+   TOOLBAR ACTIONS (Apply / Reset)
+   ========================================================================= */
+document.getElementById('applyBtn').addEventListener('click', () => {
+  let rows = parseInt(document.getElementById('rowsInput').value, 10);
+  let cols = parseInt(document.getElementById('colsInput').value, 10);
+  rows = Math.min(Math.max(rows || 1, 1), MAX_DIM);
+  cols = Math.min(Math.max(cols || 1, 1), MAX_DIM);
+  state.rows = rows;
+  state.cols = cols;
+  document.getElementById('rowsInput').value = rows;
+  document.getElementById('colsInput').value = cols;
+  renderGrid();
+  saveState();
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  state.cells = {};
+  renderGrid();
+  saveState();
+  showToast('Đã xoá toàn bộ lưới');
+});
+
+document.getElementById('resetCardsBtn').addEventListener('click', () => {
+  if(!confirm('Khôi phục lại bộ thẻ mặc định? Các thẻ tuỳ chỉnh sẽ bị xoá.')) return;
+  state.cards = JSON.parse(JSON.stringify(DEFAULT_CARDS));
+  // Drop any cell references to cards that no longer exist
+  Object.keys(state.cells).forEach(key => {
+    const data = state.cells[key];
+    if(data.cardId && !getCard(data.cardId)) data.cardId = null;
+  });
+  selectedCardId = null;
+  renderCards();
+  renderGrid();
+  saveState();
+  showToast('Đã khôi phục bộ thẻ mặc định');
+});
+
+/* =========================================================================
+   ADD / EDIT CARD MODAL
+   ========================================================================= */
+const modal = document.getElementById('cardModal');
+const modeToggle = document.getElementById('modeToggle');
+const colorRow = document.getElementById('colorRow');
+const iconColorRow = document.getElementById('iconColorRow');
+const iconPickRow = document.getElementById('iconPickRow');
+
+let draftCard = null;
+
+function buildIconPicker(filter = ''){
+  const wrap = document.getElementById('iconPicker');
+  wrap.innerHTML = '';
+  const f = filter.trim().toLowerCase();
+  ICON_LIBRARY
+    .filter(name => !f || name.includes(f))
+    .forEach(name => {
+      const cls = 'fa-solid fa-' + name;
+      const div = document.createElement('div');
+      div.className = 'ic' + (draftCard && draftCard.icon === cls ? ' selected' : '');
+      div.title = name;
+      div.innerHTML = `<i class="${cls}"></i>`;
+      div.addEventListener('click', () => {
+        draftCard.icon = cls;
+        document.getElementById('customIconClass').value = cls;
+        buildIconPicker(document.getElementById('iconSearch').value);
+        updatePreview();
+      });
+      wrap.appendChild(div);
+    });
+}
+
+document.getElementById('iconSearch').addEventListener('input', (e) => {
+  buildIconPicker(e.target.value);
+});
+
+document.getElementById('useCustomIconBtn').addEventListener('click', () => {
+  const val = document.getElementById('customIconClass').value.trim();
+  if(!val) return;
+  draftCard.icon = val;
+  buildIconPicker(document.getElementById('iconSearch').value);
+  updatePreview();
+});
+
+function setMode(mode){
+  draftCard.mode = mode;
+  [...modeToggle.children].forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+  colorRow.style.display = (mode === 'color' || mode === 'both') ? '' : 'none';
+  iconPickRow.style.display = (mode === 'icon' || mode === 'both') ? '' : 'none';
+  iconColorRow.style.display = (mode === 'icon' || mode === 'both') ? '' : 'none';
+  updatePreview();
+}
+
+[...modeToggle.children].forEach(btn => {
+  btn.addEventListener('click', () => setMode(btn.dataset.mode));
+});
+
+// Color pickers <-> hex text inputs sync
+function syncColorPair(pickerEl, hexEl, onChange){
+  pickerEl.addEventListener('input', () => {
+    hexEl.value = pickerEl.value;
+    onChange(pickerEl.value);
+  });
+  hexEl.addEventListener('input', () => {
+    if(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(hexEl.value)){
+      pickerEl.value = hexEl.value;
+      onChange(hexEl.value);
+    }
+  });
+}
+syncColorPair(
+  document.getElementById('colorPicker'),
+  document.getElementById('colorHex'),
+  (val) => { draftCard.color = val; updatePreview(); }
+);
+syncColorPair(
+  document.getElementById('iconColorPicker'),
+  document.getElementById('iconColorHex'),
+  (val) => { draftCard.iconColor = val; updatePreview(); }
+);
+
+document.getElementById('cardLabel').addEventListener('input', (e) => {
+  draftCard.label = e.target.value;
+});
+
+function updatePreview(){
+  const prev = document.getElementById('previewCard');
+  prev.innerHTML = '';
+  prev.className = 'preview-card' + (draftCard.mode === 'icon' ? ' icon-only' : '');
+  prev.style.background = draftCard.mode === 'icon' ? 'transparent' : draftCard.color;
+  if(draftCard.mode !== 'color'){
+    const i = document.createElement('i');
+    i.className = draftCard.icon || 'fa-solid fa-question';
+    i.style.color = draftCard.mode === 'icon' ? (draftCard.iconColor || draftCard.color) : (draftCard.iconColor || '#ffffff');
+    prev.appendChild(i);
+  }
+}
+
+function openCardModal(cardId = null){
+  editingCardId = cardId;
+  const existing = cardId ? getCard(cardId) : null;
+
+  draftCard = existing
+    ? JSON.parse(JSON.stringify(existing))
+    : { id: 'card-' + Date.now(), mode: 'both', color: '#2563eb', iconColor: '#ffffff', icon: 'fa-solid fa-star', label: '' };
+
+  document.getElementById('modalTitle').textContent = existing ? 'Chỉnh sửa thẻ' : 'Thêm thẻ mới';
+  document.getElementById('deleteCardBtn').style.display = existing ? '' : 'none';
+
+  document.getElementById('colorPicker').value = draftCard.color || '#2563eb';
+  document.getElementById('colorHex').value = draftCard.color || '#2563eb';
+  document.getElementById('iconColorPicker').value = draftCard.iconColor || '#ffffff';
+  document.getElementById('iconColorHex').value = draftCard.iconColor || '#ffffff';
+  document.getElementById('cardLabel').value = draftCard.label || '';
+  document.getElementById('customIconClass').value = draftCard.icon || '';
+  document.getElementById('iconSearch').value = '';
+
+  buildIconPicker('');
+  setMode(draftCard.mode);
+  updatePreview();
+
+  modal.classList.remove('hidden');
+}
+
+function closeCardModal(){
+  modal.classList.add('hidden');
+  draftCard = null;
+  editingCardId = null;
+}
+
+document.getElementById('addCardBtn').addEventListener('click', () => openCardModal(null));
+document.getElementById('cancelCardBtn').addEventListener('click', closeCardModal);
+modal.addEventListener('click', (e) => { if(e.target === modal) closeCardModal(); });
+
+document.getElementById('saveCardBtn').addEventListener('click', () => {
+  // Basic validation
+  if(draftCard.mode !== 'color' && !draftCard.icon){
+    showToast('Vui lòng chọn một icon');
+    return;
+  }
+  if(editingCardId){
+    const idx = state.cards.findIndex(c => c.id === editingCardId);
+    if(idx !== -1) state.cards[idx] = draftCard;
+  } else {
+    state.cards.push(draftCard);
+  }
+  renderCards();
+  saveState();
+  closeCardModal();
+  showToast('Đã lưu thẻ');
+});
+
+document.getElementById('deleteCardBtn').addEventListener('click', () => {
+  if(!editingCardId) return;
+  if(!confirm('Xoá thẻ này?')) return;
+  state.cards = state.cards.filter(c => c.id !== editingCardId);
+  // Remove placed instances of this card from the grid
+  Object.keys(state.cells).forEach(key => {
+    const data = state.cells[key];
+    if(data.cardId === editingCardId) data.cardId = null;
+  });
+  if(selectedCardId === editingCardId) selectedCardId = null;
+  renderCards();
+  renderGrid();
+  saveState();
+  closeCardModal();
+  showToast('Đã xoá thẻ');
+});
+
+/* =========================================================================
+   INIT
+   ========================================================================= */
+function init(){
+  loadState();
+  document.getElementById('rowsInput').value = state.rows;
+  document.getElementById('colsInput').value = state.cols;
+  applyTheme();
+  renderGrid();
+  renderCards();
+}
+init();
+</script>
+</body>
+</html>
