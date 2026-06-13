@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Key Card Match Pro</title>
+<title>Key Card Match - Custom Grid</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" />
 <style>
   /* ===================== Theme tokens ===================== */
@@ -127,6 +127,19 @@
   @media (max-width: 900px){
     .layout{ grid-template-columns: 1fr; }
   }
+  /* Mobile: show cards as a dense row of small tiles instead of 3 large ones */
+  @media (max-width: 640px){
+    .cards-grid{
+      grid-template-columns: repeat(8, 1fr);
+      gap: 6px;
+    }
+    .card-item{
+      border-radius: 6px;
+    }
+    .card-item .edit-btn{
+      width: 16px; height: 16px; font-size: 9px; top: 2px; right: 2px;
+    }
+  }
 
   .panel{
     background: var(--panel);
@@ -197,6 +210,7 @@
     box-shadow: inset 0 0 0 2px var(--accent);
   }
   .cell-card{
+    container-type: inline-size;
     width: 78%;
     height: 78%;
     margin: 0 auto;
@@ -204,14 +218,22 @@
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size: 38px;
     color: #fff;
     box-shadow: 0 2px 6px rgba(0,0,0,0.18);
   }
   .cell-card.icon-only{
     background: transparent !important;
     box-shadow: none;
-    font-size: 44px;
+  }
+  .cell-card > i{ font-size: 60cqw; line-height: 1; }
+  .cell-card .card-label{
+    font-size: 24cqw;
+    font-weight: 700;
+    text-align: center;
+    padding: 0 6%;
+    line-height: 1.15;
+    word-break: break-word;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
   }
   .cell-cross{
     position:absolute; inset:0;
@@ -232,17 +254,18 @@
     margin-bottom: 12px;
   }
   .card-item{
+    container-type: inline-size; /* lets icon/text scale relative to card size */
     aspect-ratio: 1 / 1.15;
     border-radius: 10px;
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size: 26px;
     color:#fff;
     cursor: grab;
     border: 2px solid transparent;
     box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     position: relative;
+    overflow: hidden;
     transition: transform .1s ease, border-color .15s ease;
   }
   .card-item.icon-only{
@@ -253,6 +276,18 @@
   .card-item.selected{
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  /* Icon fills 50-75% of the card */
+  .card-item > i{ font-size: 60cqw; line-height: 1; }
+  /* Text label used for color-only cards */
+  .card-item .card-label{
+    font-size: 22cqw;
+    font-weight: 700;
+    text-align: center;
+    padding: 0 6%;
+    line-height: 1.15;
+    word-break: break-word;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
   }
   .card-item .edit-btn{
     position:absolute; top:3px; right:3px;
@@ -266,6 +301,17 @@
   }
   .card-item:hover .edit-btn{ opacity:1; }
   .card-item.icon-only .edit-btn{ background: rgba(0,0,0,0.18); color: var(--text); }
+
+  /* Floating clone shown while dragging a card on touch devices */
+  .drag-ghost{
+    position: fixed;
+    z-index: 999;
+    pointer-events: none;
+    opacity: 0.85;
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+  }
+  .drag-ghost .edit-btn{ display:none; }
 
   .cards-hint{
     font-size: 12px;
@@ -426,7 +472,8 @@
       </h2>
       <div class="cards-grid" id="cardsGrid"></div>
       <div class="cards-hint">
-        Kéo thẻ vào ô để đặt. Trên di động: bấm chọn thẻ rồi bấm vào ô để đặt.
+        Kéo thẻ vào ô để đặt (hoạt động cả trên di động bằng cảm ứng).
+        Hoặc bấm chọn thẻ rồi bấm vào ô để đặt nhanh.
         Bấm <i class="fa-solid fa-pen" style="font-size:10px"></i> trên thẻ để chỉnh sửa màu / icon.
       </div>
     </div>
@@ -436,7 +483,7 @@
   <div class="panel howto">
     <h2>How to use</h2>
     <ul>
-      <li>Kéo (drag) một thẻ trong khung <b>Cards</b> vào ô trên lưới. Trên di động, bấm vào thẻ để chọn rồi bấm vào ô.</li>
+      <li>Kéo (drag) một thẻ trong khung <b>Cards</b> vào ô trên lưới. Trên di động, bạn có thể chạm và kéo trực tiếp, hoặc chạm vào thẻ để chọn rồi chạm vào ô.</li>
       <li>Bấm vào một ô để gạch <span style="color:var(--cross)"><i class="fa-solid fa-xmark"></i></span> và xoá thẻ trong ô đó.</li>
       <li>Bấm lại để xoá dấu gạch (ô trở lại trống).</li>
       <li>Bấm đúp (double click) vào ô để xoá hoàn toàn (cả thẻ và dấu gạch).</li>
@@ -522,15 +569,15 @@ const STORAGE_KEY = 'kcm_state_v1';
 const MAX_DIM = 20;
 
 const DEFAULT_CARDS = [
-  { id: 'c-gem',    mode: 'both', color: '#7cb342', iconColor: '#ffffff', icon: 'fa-solid fa-cloud', label: 'Gem' },
+  { id: 'c-gem',    mode: 'both', color: '#7cb342', iconColor: '#ffffff', icon: 'fa-solid fa-cloud', label: 'Cloud' },
   { id: 'c-anchor', mode: 'both', color: '#e040fb', iconColor: '#ffffff', icon: 'fa-solid fa-magnifying-glass', label: 'Anchor' },
-  { id: 'c-music',  mode: 'both', color: '#ffc107', iconColor: '#ffffff', icon: 'fa-solid fa-bolt', label: 'Music' },
-  { id: 'c-drink',  mode: 'both', color: '#ef5350', iconColor: '#ffffff', icon: 'fa-solid fa-wind', label: 'Drink' },
-  { id: 'c-sail',   mode: 'both', color: '#7e57c2', iconColor: '#ffffff', icon: 'fa-solid fa-wand-magic-sparkles', label: 'Sailboat' },
-  { id: 'c-wheel',  mode: 'both', color: '#ff9800', iconColor: '#ffffff', icon: 'fa-solid fa-sun', label: 'Wheel' },
-  { id: 'c-movie',  mode: 'both', color: '#ec407a', iconColor: '#ffffff', icon: 'fa-solid fa-umbrella', label: 'Movie' },
-  { id: 'c-magic',  mode: 'both', color: '#29b6f6', iconColor: '#ffffff', icon: 'fa-solid fa-cloud-rain', label: 'Magic' },
-  { id: 'c-search', mode: 'both', color: '#5c6bc0', iconColor: '#ffffff', icon: 'fa-solid fa-snowman', label: 'Search' },
+  { id: 'c-music',  mode: 'both', color: '#ffc107', iconColor: '#ffffff', icon: 'fa-solid fa-bolt', label: 'Bolt' },
+  { id: 'c-drink',  mode: 'both', color: '#ef5350', iconColor: '#ffffff', icon: 'fa-solid fa-wind', label: 'Wind' },
+  { id: 'c-sail',   mode: 'both', color: '#7e57c2', iconColor: '#ffffff', icon: 'fa-solid fa-wand-magic-sparkles', label: 'Magic' },
+  { id: 'c-wheel',  mode: 'both', color: '#ff9800', iconColor: '#ffffff', icon: 'fa-solid fa-sun', label: 'Sun' },
+  { id: 'c-movie',  mode: 'both', color: '#ec407a', iconColor: '#ffffff', icon: 'fa-solid fa-umbrella', label: 'Umbrella' },
+  { id: 'c-magic',  mode: 'both', color: '#29b6f6', iconColor: '#ffffff', icon: 'fa-solid fa-cloud-rain', label: 'Rain' },
+  { id: 'c-search', mode: 'both', color: '#5c6bc0', iconColor: '#ffffff', icon: 'fa-solid fa-snowman', label: 'Snowman' },
 ];
 
 // Curated list of common Font Awesome 6 Free (solid) icons for the picker.
@@ -595,6 +642,30 @@ function cellKey(col, row){ return col + row; }
 
 function getCard(id){
   return state.cards.find(c => c.id === id) || null;
+}
+
+// Pick black or white text depending on how light/dark a hex background color is.
+function getContrastTextColor(hex){
+  if(!hex) return '#ffffff';
+  const clean = hex.replace('#', '');
+  const full = clean.length === 3
+    ? clean.split('').map(ch => ch + ch).join('')
+    : clean.padEnd(6, '0').slice(0, 6);
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  // Relative luminance (simplified sRGB formula)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.6 ? '#1f2430' : '#ffffff';
+}
+
+// Builds the label element shown on color-only cards (no icon).
+function buildCardLabel(card){
+  const span = document.createElement('span');
+  span.className = 'card-label';
+  span.textContent = card.label || '';
+  span.style.color = getContrastTextColor(card.color);
+  return span;
 }
 
 function showToast(msg){
@@ -685,6 +756,8 @@ function renderCellContent(td, key, col, row){
         if(card.mode === 'icon') i.style.color = card.iconColor || card.color;
         else i.style.color = card.iconColor || '#ffffff';
         div.appendChild(i);
+      } else if(card.label){
+        div.appendChild(buildCardLabel(card));
       }
       td.appendChild(div);
     }
@@ -773,6 +846,8 @@ function renderCards(){
       i.className = card.icon;
       i.style.color = card.mode === 'icon' ? (card.iconColor || card.color) : (card.iconColor || '#ffffff');
       div.appendChild(i);
+    } else if(card.label){
+      div.appendChild(buildCardLabel(card));
     }
 
     const editBtn = document.createElement('button');
@@ -785,19 +860,107 @@ function renderCards(){
     });
     div.appendChild(editBtn);
 
-    // Drag start
+    // Drag start (desktop / mouse)
     div.addEventListener('dragstart', (e) => {
       e.dataTransfer.setData('text/plain', card.id);
       e.dataTransfer.effectAllowed = 'copy';
     });
 
-    // Tap to select for mobile placement
+    // Touch-based drag and drop (mobile browsers don't support HTML5 DnD)
+    attachCardTouchDrag(div, card);
+
+    // Tap to select for mobile placement (used when a touch ends without dragging)
     div.addEventListener('click', () => {
       selectedCardId = (selectedCardId === card.id) ? null : card.id;
       renderCards();
     });
 
     grid.appendChild(div);
+  });
+}
+
+/* =========================================================================
+   TOUCH DRAG AND DROP (mobile)
+   Mirrors the HTML5 drag & drop behaviour for touch screens, where the
+   native dragstart/drop events are not fired. A floating clone follows
+   the finger and the cell underneath it is highlighted; lifting the
+   finger drops the card into that cell. A plain tap (no movement) falls
+   through to the normal click handler (tap-to-select).
+   ========================================================================= */
+let touchDrag = null;
+const TOUCH_DRAG_THRESHOLD = 12; // px of movement before a tap becomes a drag
+
+function attachCardTouchDrag(div, card){
+  div.addEventListener('touchstart', (e) => {
+    if(e.target.closest('.edit-btn')) return; // let the edit button handle its own tap
+    if(e.touches.length !== 1) return;
+    const t = e.touches[0];
+    touchDrag = {
+      sourceEl: div,
+      cardId: card.id,
+      startX: t.clientX,
+      startY: t.clientY,
+      moved: false,
+      ghost: null,
+      lastCell: null
+    };
+  }, { passive: true });
+
+  div.addEventListener('touchmove', (e) => {
+    if(!touchDrag || touchDrag.sourceEl !== div) return;
+    const t = e.touches[0];
+    const dx = t.clientX - touchDrag.startX;
+    const dy = t.clientY - touchDrag.startY;
+
+    if(!touchDrag.moved && Math.hypot(dx, dy) > TOUCH_DRAG_THRESHOLD){
+      touchDrag.moved = true;
+      const rect = div.getBoundingClientRect();
+      const ghost = div.cloneNode(true);
+      ghost.querySelectorAll('.edit-btn').forEach(btn => btn.remove());
+      ghost.classList.add('drag-ghost');
+      ghost.style.width = rect.width + 'px';
+      ghost.style.height = rect.height + 'px';
+      document.body.appendChild(ghost);
+      touchDrag.ghost = ghost;
+      touchDrag.ghostW = rect.width;
+      touchDrag.ghostH = rect.height;
+    }
+
+    if(touchDrag.moved){
+      e.preventDefault(); // stop the page from scrolling while dragging
+      touchDrag.ghost.style.left = (t.clientX - touchDrag.ghostW / 2) + 'px';
+      touchDrag.ghost.style.top = (t.clientY - touchDrag.ghostH / 2) + 'px';
+
+      const elUnder = document.elementFromPoint(t.clientX, t.clientY);
+      const cell = elUnder ? elUnder.closest('td.cell') : null;
+      if(touchDrag.lastCell && touchDrag.lastCell !== cell){
+        touchDrag.lastCell.classList.remove('dragover');
+      }
+      if(cell) cell.classList.add('dragover');
+      touchDrag.lastCell = cell;
+    }
+  }, { passive: false });
+
+  div.addEventListener('touchend', (e) => {
+    if(!touchDrag || touchDrag.sourceEl !== div) return;
+    if(touchDrag.moved){
+      e.preventDefault(); // avoid firing a click after a drag
+      if(touchDrag.lastCell){
+        touchDrag.lastCell.classList.remove('dragover');
+        placeCardInCell(touchDrag.lastCell.dataset.key, card.id, touchDrag.lastCell);
+      }
+      if(touchDrag.ghost) touchDrag.ghost.remove();
+    }
+    // If it wasn't a drag, let the normal click event fire (tap-to-select)
+    touchDrag = null;
+  });
+
+  div.addEventListener('touchcancel', () => {
+    if(touchDrag && touchDrag.sourceEl === div && touchDrag.ghost){
+      touchDrag.ghost.remove();
+      if(touchDrag.lastCell) touchDrag.lastCell.classList.remove('dragover');
+    }
+    touchDrag = null;
   });
 }
 
